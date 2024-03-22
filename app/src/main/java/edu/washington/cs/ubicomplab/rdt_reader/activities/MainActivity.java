@@ -8,28 +8,38 @@
 
 package edu.washington.cs.ubicomplab.rdt_reader.activities;
 
+import static android.app.PendingIntent.getActivity;
 import static edu.washington.cs.ubicomplab.rdt_reader.core.Constants.*;
 
 import android.Manifest;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.content.res.Resources;
+import android.database.Cursor;
 import android.net.Uri;
 
+import androidx.activity.result.ActivityResultCallback;
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.PickVisualMediaRequest;
+import androidx.activity.result.contract.ActivityResultContracts;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.widget.AppCompatSpinner;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.os.Bundle;
+import android.provider.MediaStore;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
+import android.widget.Toast;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -44,8 +54,10 @@ import edu.washington.cs.ubicomplab.rdt_reader.core.Constants;
  * The main {@link android.app.Activity} from which other activities are launched, allowing users
  * to select the target RDT and modify quality thresholds (for debugging purposes only)
  */
-public class MainActivity extends AppCompatActivity implements
-        View.OnClickListener, SettingsDialogListener {
+public class MainActivity extends AppCompatActivity implements View.OnClickListener, SettingsDialogListener {
+
+    int SELECT_PICTURE = 200;
+
     /**
      * {@link android.app.Activity} onCreate()
      *
@@ -59,8 +71,7 @@ public class MainActivity extends AppCompatActivity implements
 
         // Create folders for saving the images on the device's SD card
         new File(Constants.RDT_IMAGE_DIR).mkdirs();
-        sendBroadcast(new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE,
-                Uri.parse("file://" + Constants.RDT_IMAGE_DIR)));
+        sendBroadcast(new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE, Uri.parse("file://" + Constants.RDT_IMAGE_DIR)));
 
         // Initialize UI elements
         initViews();
@@ -87,16 +98,13 @@ public class MainActivity extends AppCompatActivity implements
         // Find out which permissions are missing
         ArrayList<String> missingPermissions = new ArrayList<>();
         for (String s : requiredPermissions) {
-            if (ContextCompat.checkSelfPermission(this, s)
-                    != PackageManager.PERMISSION_GRANTED)
+            if (ContextCompat.checkSelfPermission(this, s) != PackageManager.PERMISSION_GRANTED)
                 missingPermissions.add(s);
         }
 
         // Request missing permissions
         if (missingPermissions.size() > 0)
-            ActivityCompat.requestPermissions(this,
-                    missingPermissions.toArray(new String[missingPermissions.size()]),
-                    MY_PERMISSION_REQUEST_CODE);
+            ActivityCompat.requestPermissions(this, missingPermissions.toArray(new String[missingPermissions.size()]), MY_PERMISSION_REQUEST_CODE);
     }
 
     /**
@@ -105,56 +113,40 @@ public class MainActivity extends AppCompatActivity implements
     private void loadUserPrefs() {
         // Get the user's preferences
         Context context = getApplicationContext();
-        SharedPreferences sharedPref = context.getSharedPreferences(
-                getString(R.string.preference_file_key), Context.MODE_PRIVATE);
+        SharedPreferences sharedPref = context.getSharedPreferences(getString(R.string.preference_file_key), Context.MODE_PRIVATE);
 
         // Extract user's preferences and update the app's settings
         SharedPreferences.Editor editor = sharedPref.edit();
         String languagePref = getString(R.string.preference_language);
         if (sharedPref.contains(languagePref))
-            Constants.LANGUAGE = sharedPref.getString(languagePref,
-                    Constants.LANGUAGE);
-        else
-            editor.putString(languagePref,
-                    Constants.LANGUAGE);
+            Constants.LANGUAGE = sharedPref.getString(languagePref, Constants.LANGUAGE);
+        else editor.putString(languagePref, Constants.LANGUAGE);
 
         String underExposurePref = getString(R.string.preference_under_exposure);
         if (sharedPref.contains(underExposurePref))
-            Constants.UNDER_EXPOSURE_THRESHOLD = sharedPref.getFloat(underExposurePref,
-                    (float) Constants.UNDER_EXPOSURE_THRESHOLD);
-        else
-            editor.putFloat(underExposurePref, (float) Constants.UNDER_EXPOSURE_THRESHOLD);
+            Constants.UNDER_EXPOSURE_THRESHOLD = sharedPref.getFloat(underExposurePref, (float) Constants.UNDER_EXPOSURE_THRESHOLD);
+        else editor.putFloat(underExposurePref, (float) Constants.UNDER_EXPOSURE_THRESHOLD);
 
         String overExposurePref = getString(R.string.preference_over_exposure);
         if (sharedPref.contains(overExposurePref))
-            Constants.OVER_EXPOSURE_WHITE_COUNT = sharedPref.getFloat(overExposurePref,
-                    (float) Constants.OVER_EXPOSURE_WHITE_COUNT);
+            Constants.OVER_EXPOSURE_WHITE_COUNT = sharedPref.getFloat(overExposurePref, (float) Constants.OVER_EXPOSURE_WHITE_COUNT);
         else
-            editor.putFloat(getString(R.string.preference_over_exposure),
-                    (float) Constants.OVER_EXPOSURE_WHITE_COUNT);
+            editor.putFloat(getString(R.string.preference_over_exposure), (float) Constants.OVER_EXPOSURE_WHITE_COUNT);
 
         String sharpnessPref = getString(R.string.preference_sharpness);
         if (sharedPref.contains(sharpnessPref))
-            Constants.SHARPNESS_THRESHOLD = sharedPref.getFloat(sharpnessPref,
-                    (float) Constants.SHARPNESS_THRESHOLD);
-        else
-            editor.putFloat(sharpnessPref,
-                    (float) Constants.SHARPNESS_THRESHOLD);
+            Constants.SHARPNESS_THRESHOLD = sharedPref.getFloat(sharpnessPref, (float) Constants.SHARPNESS_THRESHOLD);
+        else editor.putFloat(sharpnessPref, (float) Constants.SHARPNESS_THRESHOLD);
 
         String positionPref = getString(R.string.preference_position);
         if (sharedPref.contains(positionPref))
-            Constants.POSITION_THRESHOLD = sharedPref.getFloat(positionPref,
-                    (float) Constants.POSITION_THRESHOLD);
-        else
-            editor.putFloat(positionPref,
-                    (float) Constants.POSITION_THRESHOLD);
+            Constants.POSITION_THRESHOLD = sharedPref.getFloat(positionPref, (float) Constants.POSITION_THRESHOLD);
+        else editor.putFloat(positionPref, (float) Constants.POSITION_THRESHOLD);
 
         String sizePref = getString(R.string.preference_size);
         if (sharedPref.contains(sizePref))
-            Constants.SIZE_THRESHOLD = sharedPref.getFloat(sizePref,
-                    (float) Constants.SIZE_THRESHOLD);
-        else
-            editor.putFloat(sizePref, (float) Constants.SIZE_THRESHOLD);
+            Constants.SIZE_THRESHOLD = sharedPref.getFloat(sizePref, (float) Constants.SIZE_THRESHOLD);
+        else editor.putFloat(sizePref, (float) Constants.SIZE_THRESHOLD);
         editor.apply();
 
         // Change the language locale
@@ -209,15 +201,60 @@ public class MainActivity extends AppCompatActivity implements
      *
      * @param view the button that was selected
      */
+
+
+    ActivityResultLauncher<PickVisualMediaRequest> launcher = registerForActivityResult(new ActivityResultContracts.PickVisualMedia(), new ActivityResultCallback<Uri>() {
+        @Override
+        public void onActivityResult(Uri o) {
+            if (o == null) {
+                Toast.makeText(MainActivity.this, "No image Selected", Toast.LENGTH_SHORT).show();
+            } else {
+//                Glide.with(getApplicationContext()).load(o).into(imageView);
+
+                Intent intent = new Intent(MainActivity.this, ImageQualityActivity.class);
+                intent.putExtra("rdt_name", "test-strip");
+                Log.d(TAG, "RDT Name: " + "test-strip-upload-storage");
+                startActivity(intent);
+
+            }
+        }
+    });
+
     @Override
     public void onClick(View view) {
         if (view.getId() == R.id.imageQualityButton) {
-            // Launch an instance of the ImageQualityActivity and pass in the target RDT's name
-            AppCompatSpinner rdtName = findViewById(R.id.rdtname);
-            Intent intent = new Intent(this, ImageQualityActivity.class);
-            intent.putExtra("rdt_name", rdtName.getSelectedItem().toString());
-            Log.d(TAG, "RDT Name: " + rdtName.getSelectedItem().toString());
-            startActivity(intent);
+
+            AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
+            builder.setTitle("Process Image");
+            builder.setItems(new CharSequence[]{"Capture Image", "Upload from Storage", "Cancel"}, new DialogInterface.OnClickListener() {
+                public void onClick(DialogInterface dialog, int which) {
+
+                    switch (which) {
+                        case 0:
+
+                            // Launch an instance of the ImageQualityActivity and pass in the target RDT's name
+                            AppCompatSpinner rdtName = findViewById(R.id.rdtname);
+                            Intent intent = new Intent(MainActivity.this, ImageQualityActivity.class);
+                            intent.putExtra("rdt_name", rdtName.getSelectedItem().toString());
+                            Log.d(TAG, "RDT Name: " + rdtName.getSelectedItem().toString());
+                            startActivity(intent);
+
+                            break;
+                        case 1:
+
+                            launcher.launch(new PickVisualMediaRequest.Builder()
+                                    .setMediaType(ActivityResultContracts.PickVisualMedia.ImageOnly.INSTANCE)
+                                    .build());
+                            break;
+                        case 2:
+                            dialog.cancel();
+
+                            break;
+                    }
+                }
+            });
+            builder.create().show();
+
         } else if (view.getId() == R.id.settingsButton) {
             // Launch the SettingDialogFragment
             SettingsDialogFragment dialog = new SettingsDialogFragment();
@@ -228,6 +265,8 @@ public class MainActivity extends AppCompatActivity implements
     /**
      * {@link SettingsDialogFragment} onClickPositiveButton()
      */
+
+
     @Override
     public void onClickPositiveButton() {
         Resources res = getResources();

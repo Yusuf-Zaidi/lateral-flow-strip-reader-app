@@ -8,12 +8,16 @@
 
 package edu.washington.cs.ubicomplab.rdt_reader.activities;
 
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
+
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+
 import android.os.Bundle;
 import android.util.DisplayMetrics;
 import android.util.Log;
@@ -53,6 +57,7 @@ public class ImageResultActivity extends AppCompatActivity implements View.OnCli
 
     /**
      * {@link android.app.Activity} onCreate()
+     *
      * @param savedInstanceState: the bundle object in case this is launched from an intent
      */
     @Override
@@ -92,62 +97,69 @@ public class ImageResultActivity extends AppCompatActivity implements View.OnCli
         if (intent.hasExtra("timeTaken")) {
             timeTaken = intent.getLongExtra("timeTaken", 0);
             TextView timeTextView = findViewById(R.id.TimeTextView);
-            timeTextView.setText(String.format("%.2f seconds", timeTaken/1000.0));
+            timeTextView.setText(String.format("%.2f seconds", timeTaken / 1000.0));
         }
 
         //Number of lines
         int numberOfLines = 2;
         if (intent.hasExtra("numberOfLines")) {
-            numberOfLines = intent.getIntExtra("numberOfLines", 2);
+            numberOfLines = intent.getIntExtra("numberOfLines", 1);
+//            Toast.makeText(this, "Number of Lines: " + numberOfLines, Toast.LENGTH_SHORT).show();
+            if (numberOfLines == 3) {
+                showAlert("Test Negative : " + 1);
+            } else {
+                showAlert("Test Negative : " + 1);
+            }
         }
 
         // Top line
-        if (intent.hasExtra("topLine")) {
-            boolean topLine = intent.getBooleanExtra("topLine", false);
-            TextView topLineTextView = findViewById(R.id.topLineTextView);
-            topLineTextView.setText(String.format("%s", topLine ? "True" : "False"));
-        }
-        if (intent.hasExtra("topLineName")) {
-            String topLineName = intent.getStringExtra("topLineName");
-            TextView topLineNameTextView = findViewById(R.id.topLineNameTextView);
-            topLineNameTextView.setText(topLineName);
-        }
+//        if (intent.hasExtra("topLine")) {
+//            boolean topLine = intent.getBooleanExtra("topLine", false);
+//            TextView topLineTextView = findViewById(R.id.topLineTextView);
+//            topLineTextView.setText(String.format("%s", topLine ? "True" : "False"));
+//        }
+//        if (intent.hasExtra("topLineName")) {
+//            String topLineName = intent.getStringExtra("topLineName");
+//            TextView topLineNameTextView = findViewById(R.id.topLineNameTextView);
+//            topLineNameTextView.setText(topLineName);
+//        }
 
         // Middle line
-        if (intent.hasExtra("middleLine")) {
-            boolean middleLine = intent.getBooleanExtra("middleLine", false);
-            TextView middleLineTextView = findViewById(R.id.middleLineTextView);
-            middleLineTextView.setText(String.format("%s", middleLine ? "True" : "False"));
-        }
-        if (intent.hasExtra("middleLineName")) {
-            String middleLineName = intent.getStringExtra("middleLineName");
-            TextView middleLineNameTextView = findViewById(R.id.middleLineNameTextView);
-            middleLineNameTextView.setText(middleLineName);
-        }
+//        if (intent.hasExtra("middleLine")) {
+//            boolean middleLine = intent.getBooleanExtra("middleLine", false);
+//            TextView middleLineTextView = findViewById(R.id.middleLineTextView);
+//            middleLineTextView.setText(String.format("%s", middleLine ? "True" : "False"));
+//        }
+//        if (intent.hasExtra("middleLineName")) {
+//            String middleLineName = intent.getStringExtra("middleLineName");
+//            TextView middleLineNameTextView = findViewById(R.id.middleLineNameTextView);
+//            middleLineNameTextView.setText(middleLineName);
+//        }
 
         // Bottom line
-        if (numberOfLines > 2 && intent.hasExtra("bottomLine")) {
-            boolean bottomLine = intent.getBooleanExtra("bottomLine", false);
-            TextView bottomLineTextView = findViewById(R.id.bottomLineTextView);
-            bottomLineTextView.setVisibility(View.VISIBLE);
-            bottomLineTextView.setText(String.format("%s", bottomLine ? "True" : "False"));
-        }
-        if (numberOfLines > 2 &&  intent.hasExtra("bottomLineName")) {
-            String bottomLineName = intent.getStringExtra("bottomLineName");
-            TextView bottomLineNameTextView = findViewById(R.id.bottomLineNameTextView);
-            bottomLineNameTextView.setVisibility(View.VISIBLE);
-            bottomLineNameTextView.setText(bottomLineName);
-        }
+//        if (numberOfLines > 2 && intent.hasExtra("bottomLine")) {
+//            boolean bottomLine = intent.getBooleanExtra("bottomLine", false);
+//            TextView bottomLineTextView = findViewById(R.id.bottomLineTextView);
+//            bottomLineTextView.setVisibility(View.VISIBLE);
+////            String.format("%s", bottomLine ? "True" : "False")
+//            bottomLineTextView.setText(String.valueOf(numberOfLines));
+//        }
+//        if (numberOfLines > 2 && intent.hasExtra("bottomLineName")) {
+//            String bottomLineName = intent.getStringExtra("bottomLineName");
+//            TextView bottomLineNameTextView = findViewById(R.id.bottomLineNameTextView);
+//            bottomLineNameTextView.setVisibility(View.VISIBLE);
+//            bottomLineNameTextView.setText(bottomLineName);
+//        }
 
-        if (intent.hasExtra("hasTooMuchBlood")) {
-            boolean hasTooMuchBlood = intent.getBooleanExtra("hasTooMuchBlood", false);
-            TextView warningView = findViewById(R.id.WarningView);
-            if (hasTooMuchBlood) {
-                warningView.setText(getString(R.string.too_much_blood_warning));
-            } else {
-                warningView.setText("");
-            }
-        }
+//        if (intent.hasExtra("hasTooMuchBlood")) {
+//            boolean hasTooMuchBlood = intent.getBooleanExtra("hasTooMuchBlood", false);
+//            TextView warningView = findViewById(R.id.WarningView);
+//            if (hasTooMuchBlood) {
+//                warningView.setText(getString(R.string.too_much_blood_warning));
+//            } else {
+//                warningView.setText("");
+//            }
+//        }
 
         // Buttons
         Button saveImageButton = findViewById(R.id.saveButton);
@@ -166,8 +178,20 @@ public class ImageResultActivity extends AppCompatActivity implements View.OnCli
         startActivity(intent);
     }
 
+    private void showAlert(String message) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setMessage(message)
+                .setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int id) {
+                        // Handle positive button click if needed
+                    }
+                });
+        builder.create().show();
+    }
+
     /**
      * The listener for all of the Activity's buttons
+     *
      * @param view the button that was selected
      */
     @Override
@@ -176,7 +200,7 @@ public class ImageResultActivity extends AppCompatActivity implements View.OnCli
         if (view.getId() == R.id.saveButton) {
             // Skip if the image is already saved
             if (isImageSaved) {
-                Toast.makeText(this,"Image is already saved.", Toast.LENGTH_LONG).show();
+                Toast.makeText(this, "Image is already saved.", Toast.LENGTH_LONG).show();
                 return;
             }
 
@@ -209,7 +233,7 @@ public class ImageResultActivity extends AppCompatActivity implements View.OnCli
                 sendBroadcast(new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE, Uri.parse("file://" + filePath)));
 
                 // Notify the user that the image has been saved
-                Toast.makeText(this,"Image is successfully saved!", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, "Image is successfully saved!", Toast.LENGTH_SHORT).show();
                 isImageSaved = true;
             } catch (Exception e) {
                 Log.w("TAG", "Error saving image file: " + e.getMessage());
