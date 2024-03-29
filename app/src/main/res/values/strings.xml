@@ -30,7 +30,7 @@
     <string name="settings_strict">Strict</string>
     <string name="settings_loose">Loose</string>
     <string name="exp_date_check">Expiration Date</string>
-    <string name="image_quality">Image Quality</string>
+    <string name="image_quality">Process Image</string>
     <string name="settings">Settings</string>
     <string name="save_image">Save Image</string>
     <string name="done">Done</string>
